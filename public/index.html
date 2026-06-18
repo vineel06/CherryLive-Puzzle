@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🍒 CherryLive Puzzle</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     SPLASH / MENU SCREEN
+═══════════════════════════════════════════════ -->
+<div id="screen-menu" class="screen active">
+  <canvas id="particle-canvas"></canvas>
+
+  <div class="menu-center">
+    <div class="logo-wrap">
+      <div class="cherry-icon">🍒</div>
+      <h1 class="logo-title">CherryLive</h1>
+      <span class="logo-sub">PUZZLE</span>
+    </div>
+    <p class="tagline">Shatter your face. Piece it together.</p>
+
+    <div class="menu-buttons">
+      <button class="btn btn-primary btn-glow" onclick="App.goToSetup('solo')">
+        🎯 Solo Play
+      </button>
+      <button class="btn btn-secondary btn-glow" onclick="App.goToSetup('multiplayer')">
+        🌐 Multiplayer
+      </button>
+      <button class="btn btn-ghost" onclick="App.showHowTo()">
+        📖 How to Play
+      </button>
+    </div>
+
+    <div class="menu-footer">
+      <span>🆓 100% Free • No Accounts • No APIs</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SETUP SCREEN
+═══════════════════════════════════════════════ -->
+<div id="screen-setup" class="screen">
+  <div class="setup-container">
+    <button class="back-btn" onclick="App.goTo('menu')">← Back</button>
+    <h2 class="setup-title">🍒 Game Setup</h2>
+
+    <!-- Camera Preview -->
+    <div class="camera-setup-wrap">
+      <video id="setup-video" autoplay muted playsinline></video>
+      <canvas id="setup-canvas"></canvas>
+      <div class="camera-overlay-text">📸 Live Camera Preview</div>
+      <div id="no-camera-msg" class="no-camera-msg" style="display:none">
+        ❌ Camera not found.<br>Please allow camera access.
+      </div>
+    </div>
+
+    <div class="setup-grid">
+      <!-- Difficulty -->
+      <div class="setup-card">
+        <label>🧩 Difficulty</label>
+        <div class="pill-group" id="difficulty-group">
+          <button class="pill" data-val="3x3" onclick="App.setDifficulty(this,'3x3')">3×3<br><small>9 pieces</small></button>
+          <button class="pill active" data-val="4x4" onclick="App.setDifficulty(this,'4x4')">4×4<br><small>16 pieces</small></button>
+          <button class="pill" data-val="5x5" onclick="App.setDifficulty(this,'5x5')">5×5<br><small>25 pieces</small></button>
+          <button class="pill" data-val="6x6" onclick="App.setDifficulty(this,'6x6')">6×6<br><small>36 pieces</small></button>
+          <button class="pill" data-val="8x8" onclick="App.setDifficulty(this,'8x8')">8×8<br><small>64 pieces</small></button>
+        </div>
+      </div>
+
+      <!-- Image Source -->
+      <div class="setup-card">
+        <label>🖼️ Image Source</label>
+        <div class="pill-group">
+          <button class="pill active" onclick="App.setSource(this,'camera')">📷 Live Camera</button>
+          <button class="pill" onclick="App.setSource(this,'upload')">📁 Upload Image</button>
+        </div>
+        <input type="file" id="img-upload" accept="image/*" style="display:none" onchange="App.onImageUpload(event)" />
+        <button class="btn btn-ghost small" id="btn-snapshot" onclick="App.takeSnapshot()">📸 Take Snapshot Instead</button>
+      </div>
+
+      <!-- Timer -->
+      <div class="setup-card">
+        <label>⏱️ Timer Mode</label>
+        <div class="pill-group">
+          <button class="pill active" onclick="App.setTimer(this,'countup')">⬆️ Count Up</button>
+          <button class="pill" onclick="App.setTimer(this,'countdown')">⏳ Countdown</button>
+          <button class="pill" onclick="App.setTimer(this,'none')">🚫 None</button>
+        </div>
+        <div id="countdown-input" style="display:none;margin-top:8px">
+          <input type="number" id="countdown-minutes" value="5" min="1" max="60" class="num-input" /> min
+        </div>
+      </div>
+
+      <!-- Special FX -->
+      <div class="setup-card">
+        <label>✨ Special Effects</label>
+        <div class="toggle-list">
+          <label class="toggle-item"><input type="checkbox" id="fx-mirror" checked /> Mirror camera</label>
+          <label class="toggle-item"><input type="checkbox" id="fx-scramble" checked /> Scramble animation</label>
+          <label class="toggle-item"><input type="checkbox" id="fx-celebrate" checked /> Celebration FX</label>
+          <label class="toggle-item"><input type="checkbox" id="fx-ghost" /> Ghost preview</label>
+          <label class="toggle-item"><input type="checkbox" id="fx-rotation" /> Rotate pieces</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Multiplayer Setup (shown only in multiplayer mode) -->
+    <div id="mp-setup" style="display:none">
+      <div class="setup-card mp-card">
+        <label>🌐 Multiplayer</label>
+        <div class="mp-tabs">
+          <button class="mp-tab active" id="tab-create" onclick="App.mpTab('create')">Create Room</button>
+          <button class="mp-tab" id="tab-join" onclick="App.mpTab('join')">Join Room</button>
+        </div>
+
+        <div id="mp-create">
+          <input type="text" id="mp-name" placeholder="Your name" class="text-input" maxlength="20" />
+          <div class="pill-group" style="margin-top:8px">
+            <button class="pill active" onclick="App.setMpMode(this,'competitive')">⚔️ Competitive</button>
+            <button class="pill" onclick="App.setMpMode(this,'cooperative')">🤝 Cooperative</button>
+            <button class="pill" onclick="App.setMpMode(this,'race')">🏁 Race</button>
+          </div>
+        </div>
+
+        <div id="mp-join" style="display:none">
+          <input type="text" id="mp-join-name" placeholder="Your name" class="text-input" maxlength="20" />
+          <input type="text" id="mp-room-code" placeholder="Room code (e.g. AB12CD)" class="text-input upper" maxlength="6" />
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-glow btn-big" onclick="App.startGame()">
+      🚀 Start Puzzle!
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     WAITING ROOM (multiplayer)
+═══════════════════════════════════════════════ -->
+<div id="screen-lobby" class="screen">
+  <div class="lobby-container">
+    <h2>🍒 Waiting Room</h2>
+    <div class="room-code-display">
+      Room Code: <span id="lobby-room-code">------</span>
+      <button class="btn btn-ghost small" onclick="App.copyRoomCode()">📋 Copy</button>
+    </div>
+    <p class="lobby-hint">Share this code with friends on the same WiFi!</p>
+
+    <div id="lobby-players" class="lobby-players"></div>
+
+    <div class="lobby-mode-info">
+      Mode: <span id="lobby-mode">Competitive</span>
+    </div>
+
+    <div id="lobby-start-wrap">
+      <button class="btn btn-primary btn-glow" id="btn-lobby-start" onclick="App.hostStartGame()">
+        🚀 Start Game (Host)
+      </button>
+    </div>
+    <div id="lobby-waiting-msg" style="display:none" class="waiting-msg">
+      ⏳ Waiting for host to start...
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     GAME SCREEN
+═══════════════════════════════════════════════ -->
+<div id="screen-game" class="screen">
+
+  <!-- HUD Top Bar -->
+  <div class="hud-top">
+    <div class="hud-left">
+      <button class="hud-btn" onclick="App.pauseGame()" id="btn-pause" title="Pause">⏸</button>
+      <div class="hud-timer" id="hud-timer">00:00</div>
+      <div class="hud-score">🍒 <span id="hud-score">0</span></div>
+    </div>
+    <div class="hud-center">
+      <div class="hud-progress-wrap">
+        <div class="hud-progress-bar" id="hud-progress-bar"></div>
+      </div>
+      <span id="hud-progress-text">0 / 0 pieces</span>
+    </div>
+    <div class="hud-right">
+      <button class="hud-btn" onclick="App.toggleGhost()" id="btn-ghost" title="Ghost Preview">👻</button>
+      <button class="hud-btn" onclick="App.shufflePieces()" title="Reshuffle">🔀</button>
+      <button class="hud-btn" onclick="App.quitGame()" title="Quit">🚪</button>
+    </div>
+  </div>
+
+  <!-- Camera live feed (small, corner) -->
+  <video id="game-video" autoplay muted playsinline class="game-video-feed"></video>
+
+  <!-- Ghost canvas (faint full image underneath) -->
+  <canvas id="ghost-canvas" class="ghost-canvas"></canvas>
+
+  <!-- Main Puzzle Canvas -->
+  <canvas id="puzzle-canvas" class="puzzle-canvas"></canvas>
+
+  <!-- Multiplayer Scoreboard (side panel) -->
+  <div id="mp-scoreboard" class="mp-scoreboard" style="display:none">
+    <div class="mp-score-title">🏆 Scores</div>
+    <div id="mp-score-list"></div>
+    <div class="mp-chat">
+      <div id="mp-chat-log" class="mp-chat-log"></div>
+      <div class="mp-chat-input-row">
+        <input type="text" id="mp-chat-input" placeholder="Chat..." maxlength="100" onkeydown="if(event.key==='Enter')App.sendChat()" />
+        <button onclick="App.sendChat()">➤</button>
+      </div>
+      <div class="emoji-bar">
+        <span onclick="App.sendEmoji('😂')">😂</span>
+        <span onclick="App.sendEmoji('🔥')">🔥</span>
+        <span onclick="App.sendEmoji('👏')">👏</span>
+        <span onclick="App.sendEmoji('😮')">😮</span>
+        <span onclick="App.sendEmoji('💀')">💀</span>
+        <span onclick="App.sendEmoji('🍒')">🍒</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating emoji reactions -->
+  <div id="emoji-float-layer" class="emoji-float-layer"></div>
+
+  <!-- Pause Overlay -->
+  <div id="pause-overlay" class="overlay" style="display:none">
+    <div class="overlay-box">
+      <h2>⏸ Paused</h2>
+      <button class="btn btn-primary" onclick="App.resumeGame()">▶ Resume</button>
+      <button class="btn btn-ghost" onclick="App.quitGame()">🚪 Quit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     WIN / COMPLETE SCREEN
+═══════════════════════════════════════════════ -->
+<div id="screen-win" class="screen">
+  <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
+  <div class="win-container">
+    <div class="win-emoji" id="win-emoji">🎉</div>
+    <h1 id="win-title">Puzzle Complete!</h1>
+    <div class="win-stats">
+      <div class="stat-box"><span id="win-time">--:--</span><small>Time</small></div>
+      <div class="stat-box"><span id="win-score">0</span><small>Score</small></div>
+      <div class="stat-box"><span id="win-pieces">0</span><small>Pieces</small></div>
+    </div>
+    <div id="win-mp-scores" style="display:none" class="win-mp-scores"></div>
+    <canvas id="win-preview" class="win-preview"></canvas>
+    <div class="win-buttons">
+      <button class="btn btn-primary btn-glow" onclick="App.playAgain()">🔄 Play Again</button>
+      <button class="btn btn-secondary" onclick="App.goTo('menu')">🏠 Main Menu</button>
+      <button class="btn btn-ghost" onclick="App.saveWinPhoto()">💾 Save Photo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     HOW TO PLAY MODAL
+═══════════════════════════════════════════════ -->
+<div id="modal-howto" class="modal-overlay" style="display:none" onclick="App.closeModal('howto')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="App.closeModal('howto')">✕</button>
+    <h2>📖 How to Play</h2>
+    <div class="howto-steps">
+      <div class="howto-step"><span>1</span><p>Allow <strong>camera access</strong> — your face becomes the puzzle!</p></div>
+      <div class="howto-step"><span>2</span><p>Choose <strong>difficulty</strong> — from 3×3 (easy) to 8×8 (expert).</p></div>
+      <div class="howto-step"><span>3</span><p><strong>Drag & drop</strong> pieces to the board. Pieces snap when close!</p></div>
+      <div class="howto-step"><span>4</span><p>Enable <strong>Ghost Preview</strong> 👻 to see the faint full image.</p></div>
+      <div class="howto-step"><span>5</span><p>In <strong>Multiplayer</strong>, share your room code with friends on the same WiFi.</p></div>
+      <div class="howto-step"><span>6</span><p><strong>Competitive</strong>: most pieces placed wins. <strong>Race</strong>: finish first. <strong>Coop</strong>: work together!</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notifications -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- Scripts -->
+<script src="/socket.io/socket.io.js"></script>
+<script src="particles.js"></script>
+<script src="puzzle.js"></script>
+<script src="network.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
